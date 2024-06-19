@@ -199,8 +199,8 @@ def box_refinement_graph(box, gt_box):
 
     dy = (gt_center_y - center_y) / height
     dx = (gt_center_x - center_x) / width
-    dh = tf.log(gt_height / height)
-    dw = tf.log(gt_width / width)
+    dh = tf.math.log(gt_height / height)
+    dw = tf.math.log(gt_width / width)
 
     result = tf.stack([dy, dx, dh, dw], axis=1)
     return result
@@ -530,7 +530,7 @@ def minimize_mask(bbox, mask, mini_shape):
             raise Exception("Invalid bounding box with area of zero")
         # Resize with bilinear interpolation
         m = resize(m, mini_shape)
-        mini_mask[:, :, i] = np.around(m).astype(np.bool)
+        mini_mask[:, :, i] = np.around(m).astype(bool)
     return mini_mask
 
 
@@ -893,16 +893,23 @@ def resize(image, output_shape, order=1, mode='constant', cval=0, clip=True,
     of skimage. This solves the problem by using different parameters per
     version. And it provides a central place to control resizing defaults.
     """
+    return_type = image.dtype
+    imgf = image.astype(np.float32)
     if LooseVersion(skimage.__version__) >= LooseVersion("0.14"):
         # New in 0.14: anti_aliasing. Default it to False for backward
         # compatibility with skimage 0.13.
         return skimage.transform.resize(
-            image, output_shape,
+            #image, output_shape,
+            imgf, output_shape,
             order=order, mode=mode, cval=cval, clip=clip,
             preserve_range=preserve_range, anti_aliasing=anti_aliasing,
-            anti_aliasing_sigma=anti_aliasing_sigma)
+            anti_aliasing_sigma=anti_aliasing_sigma).astype(return_type
+            )
+        
     else:
         return skimage.transform.resize(
-            image, output_shape,
+            #image, output_shape,
+            imgf, output_shape,
             order=order, mode=mode, cval=cval, clip=clip,
-            preserve_range=preserve_range)
+            preserve_range=preserve_range).astype(return_type)
+            #reserve_range=preserve_range
